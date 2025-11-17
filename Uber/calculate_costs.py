@@ -7,8 +7,10 @@ df = pd.read_csv('trips_data-0.csv')
 # Convert request_time to datetime
 df['request_time'] = pd.to_datetime(df['request_time'])
 
-# Extract year from request_time
+# Extract year and month from request_time
 df['year'] = df['request_time'].dt.year
+df['month'] = df['request_time'].dt.month
+df['year_month'] = df['request_time'].dt.to_period('M')
 
 # Filter for completed trips only (trips that have a fare)
 completed_df = df[df['status'] == 'completed']
@@ -17,21 +19,21 @@ completed_df = df[df['status'] == 'completed']
 currencies = completed_df['fare_currency'].dropna().unique()
 
 print("=" * 70)
-print("UBER COSTS BREAKDOWN BY YEAR AND CURRENCY")
+print("UBER COSTS BREAKDOWN BY MONTH AND CURRENCY")
 print("=" * 70)
 
 # Calculate costs for each currency
 for currency in sorted(currencies):
     currency_df = completed_df[completed_df['fare_currency'] == currency]
-    yearly_costs = currency_df.groupby('year')['fare_amount'].sum().sort_index()
+    monthly_costs = currency_df.groupby('year_month')['fare_amount'].sum().sort_index()
     total_cost = currency_df['fare_amount'].sum()
 
     print(f"\n{currency}:")
     print("-" * 70)
 
-    for year, cost in yearly_costs.items():
-        num_trips = len(currency_df[currency_df['year'] == year])
-        print(f"  {year}: {cost:,.2f} {currency} ({num_trips} trips)")
+    for year_month, cost in monthly_costs.items():
+        num_trips = len(currency_df[currency_df['year_month'] == year_month])
+        print(f"  {year_month}: {cost:,.2f} {currency} ({num_trips} trips)")
 
     print(f"  {'-' * 66}")
     print(f"  TOTAL: {total_cost:,.2f} {currency} ({len(currency_df)} trips)")
